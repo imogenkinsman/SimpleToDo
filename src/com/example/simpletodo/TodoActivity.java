@@ -17,26 +17,34 @@ import android.widget.EditText;
 import android.widget.ListView;
 
 public class TodoActivity extends Activity {
-	ArrayList<String> items;
-	ArrayAdapter<String> itemsAdapter;
-	ListView lvItems;
+	private ArrayList<String> todoItems;
+	private ArrayAdapter<String> todoAdapter;
+	private ListView lvItems;
+	private EditText etNewItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_todo);
-                
+        etNewItem = (EditText) findViewById(R.id.etNewItem);
         lvItems = (ListView) findViewById(R.id.lvItems);
-        items = readItems();
-        itemsAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items);
-        lvItems.setAdapter(itemsAdapter);
-        
-        if (items.isEmpty()){
-            items.add("First item");
-            items.add("Second item");	
-        }
-        
+        readItems();
+        todoAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, todoItems);
+        lvItems.setAdapter(todoAdapter);
         setupListViewListener();
+    }
+    
+    public void setupListViewListener() {
+    	lvItems.setOnItemLongClickListener(new OnItemLongClickListener() {
+			@Override
+			public boolean onItemLongClick(AdapterView<?> adapter, View arg1, int pos, long id) {
+				todoItems.remove(pos);
+				todoAdapter.notifyDataSetChanged();
+				writeItems();
+				return true;
+			}
+
+    	});
     }
 
 
@@ -48,42 +56,30 @@ public class TodoActivity extends Activity {
     }
     
     public void addTodoItem(View v) {
-    	EditText etNewItem = (EditText) findViewById(R.id.etNewItem);
-    	itemsAdapter.add(etNewItem.getText().toString());
+    	String itemText = etNewItem.getText().toString();
+    	todoAdapter.add(itemText);
     	etNewItem.setText("");
+    	writeItems();
     }
     
-    public void setupListViewListener() {
-    	lvItems.setOnItemLongClickListener(new OnItemLongClickListener() {
-    		
-    		@Override
-    		public boolean onItemLongClick(AdapterView<?> aView, View item, int position, long rowId) {
-    			items.remove(position);
-    			itemsAdapter.notifyDataSetChanged();
-    			saveItems();
-    			return true;
-    		}
-    	});
-    }
-    
-    private ArrayList<String> readItems() {
+    private void readItems() {
     	File filesDir = getFilesDir();
     	File todoFile = new File(filesDir, "todo.txt");
     	try {
-    		return new ArrayList<String>(FileUtils.readLines(todoFile));
+    		todoItems = new ArrayList<String>(FileUtils.readLines(todoFile));
     	} catch (IOException e) {
-    		e.printStackTrace();
-    		return new ArrayList<String>();
+    		todoItems = new ArrayList<String>();
     	}
     }
     
-    private void saveItems(){
+    private void writeItems() {
     	File filesDir = getFilesDir();
     	File todoFile = new File(filesDir, "todo.txt");
     	try {
-    		FileUtils.writeLines(todoFile, items);
+    		FileUtils.writeLines(todoFile, todoItems);
     	} catch (IOException e) {
     		e.printStackTrace();
     	}
     }
+    
 }
